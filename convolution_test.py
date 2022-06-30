@@ -5,13 +5,14 @@ import cv2
 from matplotlib import pyplot as plt
 from pip import main
 import os
+from PIL import Image, ImageDraw
 
 
 # helper function to get the path string for the image based on image number
 def image_path_generator(main_path_string: str, image_number: int) -> str:
 
     image_number = str(image_number)
-    padding_size = 5 - len(image_number)
+    padding_size = 3 - len(image_number)
     padding = ""
 
     for _ in range(padding_size):
@@ -19,14 +20,14 @@ def image_path_generator(main_path_string: str, image_number: int) -> str:
 
     image_number = padding + image_number
 
-    return main_path_string + image_number + ".bmp"
+    return main_path_string + image_number + ".jpeg"
+
+
 
 
 # helper to find the midpoint of the ball given the image
-def find_ball_location(main_path_string: str, image_number: int):
+def find_ball_location(image_path):
 # main path string
-
-    image_path = image_path_generator(main_path_string, image_number)
 
     # load in the image
     read_image = cv2.imread(image_path, 1)
@@ -64,46 +65,96 @@ def find_ball_location(main_path_string: str, image_number: int):
         cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
         cv2.imshow('detected circles',read_image)
         cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
         return main_circle
 
     else:
 
-        cv2.imshow('detected circles',read_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow('detected circles',read_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return False
 
 
 
+def create_circle_cutout(main_path_string, main_circle):
+
+    image = cv2.imread('test_imgs/test_imgs.001.jpeg')
+    mask = np.zeros(image.shape, dtype=np.uint8)
+    x,y = main_circle[0], main_circle[1]
+    cv2.circle(mask, (x,y), main_circle[2], (255,255,255), -1)
+
+    # Bitwise-and for ROI
+    ROI = cv2.bitwise_and(image, mask)
+
+    # Crop mask and turn background white
+    mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+    x,y,w,h = cv2.boundingRect(mask)
+    result = ROI[y:y+h,x:x+w]
+    mask = mask[y:y+h,x:x+w]
+    result[mask==0] = (255,255,255)
+
+    cv2.imshow('result', result)
+    cv2.waitKey()
 
 
-folder_path = "PerfectNick_soft_rotation_1"
+
+
+def compare_cutouts(old_cut, new_cut):
+    pass
+
+
+
+
+
+
+
+
+
+
+folder_path = "test_imgs"
+all_images_paths = []
 
 num_images = 0
-for ele in os.scandir(folder_path):
-    num_images += os.stat(ele).st_size
+for path in os.listdir(folder_path):
+    relative_path = os.path.join(folder_path, path)
+    if os.path.isfile(relative_path):
+        num_images += 1
+        all_images_paths.append(relative_path)
 
 
+ball_presence = []
 x_locations = []
 y_locations = []
-main_path_string = "PerfectNick_soft_rotation_1/PerfectNick__soft_rotation_1_C001H001S00010"
+rotation_amounts = []
 
-for image_number in range(1, num_images-1):
-
-    main_circle = find_ball_location(main_path_string, image_number)
-
-    if main_circle is not False:
-        print("ball at {}".format(image_number))
-
-    else:
-        print("ball not at {}".format(image_number))
+old_cutout = 0
+new_cutout = 0
 
 
+main_circle = find_ball_location(all_images_paths[0])
+old_cutout = create_circle_cutout(all_images_paths[0], main_circle)
+print("old", main_circle)
 
 
-
+main_circle = find_ball_location(all_images_paths[2])
+new_cutout = create_circle_cutout(all_images_paths[2], main_circle)
+print("new", main_circle)
 
 
 
 
+
+# for i in range(num_images):
+
+#     main_circle = find_ball_location(all_images_paths[i])
+#     new_cutout = create_circle_cutout(all_images_paths[i], main_circle)
+
+#     if main_circle is not False:
+#         print("ball at {}".format(i))
+
+#     else:
+#         print("ball not at {}".format(i))
+
+#     if i != 0:
+#         compare_cutouts(old_cutout, new_cutout)
