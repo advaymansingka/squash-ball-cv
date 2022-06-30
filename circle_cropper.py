@@ -5,6 +5,7 @@ import cv2
 from matplotlib import pyplot as plt
 from pip import main
 import os
+from PIL import Image, ImageDraw
 
 
 # helper function to get the path string for the image based on image number
@@ -104,6 +105,23 @@ for image_number in range(1, num_images-1):
 
 
 
+# Create mask and draw circle onto mask
+image = cv2.imread('test_imgs/test_imgs.001.jpeg')
+mask = np.zeros(image.shape, dtype=np.uint8)
+x,y = main_circle[0], main_circle[1]
+cv2.circle(mask, (x,y), main_circle[2], (255,255,255), -1)
 
+# Bitwise-and for ROI
+ROI = cv2.bitwise_and(image, mask)
+
+# Crop mask and turn background white
+mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+x,y,w,h = cv2.boundingRect(mask)
+result = ROI[y:y+h,x:x+w]
+mask = mask[y:y+h,x:x+w]
+result[mask==0] = (255,255,255)
+
+cv2.imshow('result', result)
+cv2.waitKey()
 
 
