@@ -1,39 +1,109 @@
-import cv2
 import numpy as np
+import math
+import random
+import cv2
+from matplotlib import pyplot as plt
+from pip import main
+import os
 
-img1 = cv2.imread("PerfectNick_soft_rotation_1/PerfectNick__soft_rotation_1_C001H001S0001000015.bmp")
-img = cv2.imread("PerfectNick_soft_rotation_1/PerfectNick__soft_rotation_1_C001H001S0001000015.bmp", 0)
-gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-ret, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
 
-# Create mask
-height,width = img.shape
-mask = np.zeros((height,width), np.uint8)
+# helper function to get the path string for the image based on image number
+def image_path_generator(main_path_string: str, image_number: int) -> str:
 
-edges = cv2.Canny(thresh, 100, 200)
-#cv2.imshow('detected ',gray)
-cimg=cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 10000, param1 = 50, param2 = 30, minRadius = 0, maxRadius = 0)
-for i in circles[0,:]:
-    i[2]=i[2]+4
-    # Draw on mask
-    cv2.circle(mask,(i[0],i[1]),i[2],(255,255,255),thickness=-1)
+    image_number = str(image_number)
+    padding_size = 3 - len(image_number)
+    padding = ""
 
-# Copy that image using that mask
-masked_data = cv2.bitwise_and(img1, img1, mask=mask)
+    for _ in range(padding_size):
+        padding += "0"
 
-# Apply Threshold
-_,thresh = cv2.threshold(mask,1,255,cv2.THRESH_BINARY)
+    image_number = padding + image_number
 
-# Find Contour
-contours = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-x,y,w,h = cv2.boundingRect(contours[0])
+    return main_path_string + image_number + ".jpeg"
 
-# Crop masked_data
-crop = masked_data[y:y+h,x:x+w]
 
-#Code to close Window
-cv2.imshow('detected Edge',img1)
-cv2.imshow('Cropped Eye',crop)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+# helper to find the midpoint of the ball given the image
+def find_ball_location(main_path_string: str, image_number: int):
+# main path string
+
+    image_path = image_path_generator(main_path_string, image_number)
+
+    # load in the image
+    read_image = cv2.imread(image_path, 1)
+
+    # add in gaussian blur so that the inside things on the squash ball are not identified as circles
+    blurred_read_image = cv2.GaussianBlur(read_image, (21, 21), cv2.BORDER_DEFAULT)
+    blurred_read_image_copy = blurred_read_image.copy()
+    blurred_read_image_copy = cv2.cvtColor(blurred_read_image_copy, cv2.COLOR_BGR2GRAY)
+
+    all_circles = cv2.HoughCircles(blurred_read_image_copy, cv2.HOUGH_GRADIENT, 1, 20, param1=60, param2=40, minRadius=35, maxRadius=0)
+
+    if all_circles is not None:
+
+        all_circles = np.uint16(np.around(all_circles))
+        num_circles = all_circles.shape[1]
+
+        if num_circles > 1:
+            biggest_rad = all_circles[0][0][2]
+            biggest_num = 0
+
+            for num in range(num_circles):
+
+                if all_circles[0][num][2] > biggest_rad:
+                    biggest_rad = all_circles[0][num][2]
+                    biggest_num = num
+
+            main_circle = all_circles[0][biggest_num]
+        else:
+            main_circle = all_circles
+
+        main_circle = np.squeeze(main_circle)
+
+        cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
+        # draw the center of the circle
+        cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
+        cv2.imshow('detected circles',read_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        return main_circle
+
+    else:
+
+        cv2.imshow('detected circles',read_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        return False
+
+
+
+
+
+folder_path = "test_imgs"
+
+num_images = 0
+for ele in os.scandir(folder_path):
+    num_images += os.stat(ele).st_size
+
+
+x_locations = []
+y_locations = []
+main_path_string = "test_imgs/test_imgs."
+
+for image_number in range(1, num_images-1):
+
+    main_circle = find_ball_location(main_path_string, image_number)
+
+    if main_circle is not False:
+        print("ball at {}".format(image_number))
+
+    else:
+        print("ball not at {}".format(image_number))
+
+
+
+
+
+
+
+
+
