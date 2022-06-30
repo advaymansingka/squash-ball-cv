@@ -60,19 +60,19 @@ def find_ball_location(main_path_string: str, image_number: int):
 
         main_circle = np.squeeze(main_circle)
 
-        cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
-        # draw the center of the circle
-        cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
-        cv2.imshow('detected circles',read_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
+        # # draw the center of the circle
+        # cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
+        # cv2.imshow('detected circles',read_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return main_circle
 
     else:
 
-        cv2.imshow('detected circles',read_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow('detected circles',read_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return False
 
 
@@ -80,17 +80,23 @@ def find_ball_location(main_path_string: str, image_number: int):
 
 
 folder_path = "test_imgs"
+all_images = []
 
 num_images = 0
-for ele in os.scandir(folder_path):
-    num_images += os.stat(ele).st_size
+for path in os.listdir(folder_path):
+    relative_path = os.path.join(folder_path, path)
+    if os.path.isfile(relative_path):
+        num_images += 1
+        all_images.append(relative_path)
 
+# print(num_images)
+# print(all_images)
 
 x_locations = []
 y_locations = []
 main_path_string = "test_imgs/test_imgs."
 
-for image_number in range(1, num_images-1):
+for image_number in range(1, num_images+1):
 
     main_circle = find_ball_location(main_path_string, image_number)
 
@@ -99,8 +105,6 @@ for image_number in range(1, num_images-1):
 
     else:
         print("ball not at {}".format(image_number))
-
-
 
 
 
