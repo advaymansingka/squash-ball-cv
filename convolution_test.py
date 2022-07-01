@@ -5,7 +5,7 @@ import cv2
 from matplotlib import pyplot as plt
 from pip import main
 import os
-from PIL import Image, ImageDraw
+import imutils
 
 
 # helper function to get the path string for the image based on image number
@@ -79,7 +79,7 @@ def find_ball_location(image_path):
 
 def create_circle_cutout(main_path_string, main_circle):
 
-    image = cv2.imread('test_imgs/test_imgs.001.jpeg')
+    image = cv2.imread(main_path_string)
     mask = np.zeros(image.shape, dtype=np.uint8)
     x,y = main_circle[0], main_circle[1]
     cv2.circle(mask, (x,y), main_circle[2], (255,255,255), -1)
@@ -97,22 +97,103 @@ def create_circle_cutout(main_path_string, main_circle):
     cv2.imshow('result', result)
     cv2.waitKey()
 
-
-
-
-def compare_cutouts(old_cut, new_cut):
-    pass
+    return result
 
 
 
 
+def convolve_cutouts(old_cutout, new_cutout):
+
+    rows = old_cutout.shape[0]
+    cols = old_cutout.shape[1]
+
+    img_center = (cols / 2, rows / 2)
+    M = cv2.getRotationMatrix2D(img_center, 5, 1)
+    old_cut_plus_five = cv2.warpAffine(old_cutout, M, (cols, rows), borderValue=255)
+
+    min_found = False
+    minima_index = 0
+    i = 0
+
+    convolution_returns = []
+
+    while not min_found:
+
+        rows = old_cut_plus_five.shape[0]
+        cols = old_cut_plus_five.shape[1]
+
+        img_center = (cols / 2, rows / 2)
+        M = cv2.getRotationMatrix2D(img_center, -0.05 * i, 1)
+
+        rotated_image = cv2.warpAffine(old_cut_plus_five, M, (cols, rows), borderValue=255)
+
+        new_grey_cutout = cv2.cvtColor(new_cutout, cv2.COLOR_BGR2GRAY)
+        rotated_image = cv2.cvtColor(rotated_image, cv2.COLOR_BGR2GRAY)
+
+        width_diff = rotated_image.shape[1] - new_grey_cutout.shape[1]
+        left = abs(width_diff) // 2
+        right = abs(width_diff) - left
+
+        if width_diff == 0:
+            pass
+
+        elif width_diff > 0:
+            new_grey_cutout = cv2.copyMakeBorder(new_grey_cutout, 0, 0, left, right, cv2.BORDER_CONSTANT, value = 255)
+
+        elif width_diff < 0:
+            rotated_image = cv2.copyMakeBorder(rotated_image, 0, 0, left, right, cv2.BORDER_CONSTANT, value = 255)
+
+
+        height_diff = rotated_image.shape[0] - new_grey_cutout.shape[0]
+        top = abs(height_diff) // 2
+        bottom = abs(height_diff) - top
+
+        if height_diff == 0:
+            pass
+
+        elif height_diff > 0:
+            new_grey_cutout = cv2.copyMakeBorder(new_grey_cutout, top, bottom, 0, 0, cv2.BORDER_CONSTANT, value = 255)
+
+        elif height_diff < 0:
+            rotated_image = cv2.copyMakeBorder(rotated_image, top, bottom, 0, 0, cv2.BORDER_CONSTANT, value = 255)
+
+        convolved = cv2.subtract(rotated_image, new_grey_cutout)
+
+        convolution_ret = cv2.sumElems(convolved)[0]
+        convolution_returns.append(convolution_ret)
+
+        if i > 8:
+            potential_minima = convolution_returns[-4]
+            behind = (convolution_returns[-7] + convolution_returns[-6] + convolution_returns[-5]) // 3
+            ahead = (convolution_returns[-3] + convolution_returns[-2] + convolution_returns[-1]) // 3
+
+            if potential_minima < behind and potential_minima < ahead:
+                min_found = True
+                minima_index = i
+
+        i += 1
+
+    if not minima_index:
+        return False
+
+    else:
+        minima_angle = 5 - 0.05 * minima_index
+        minima_angle = round(minima_angle, 3)
+
+        return minima_angle
 
 
 
 
 
 
-folder_path = "test_imgs"
+
+
+
+
+
+
+folder_path = "PerfectNick_soft_rotation_1"
 all_images_paths = []
 
 num_images = 0
@@ -121,6 +202,9 @@ for path in os.listdir(folder_path):
     if os.path.isfile(relative_path):
         num_images += 1
         all_images_paths.append(relative_path)
+
+all_images_paths.sort()
+
 
 
 ball_presence = []
@@ -131,17 +215,17 @@ rotation_amounts = []
 old_cutout = 0
 new_cutout = 0
 
-
-main_circle = find_ball_location(all_images_paths[0])
-old_cutout = create_circle_cutout(all_images_paths[0], main_circle)
+main_circle = find_ball_location(all_images_paths[17])
+old_cutout = create_circle_cutout(all_images_paths[17], main_circle)
 print("old", main_circle)
 
 
-main_circle = find_ball_location(all_images_paths[2])
-new_cutout = create_circle_cutout(all_images_paths[2], main_circle)
+main_circle = find_ball_location(all_images_paths[18])
+new_cutout = create_circle_cutout(all_images_paths[18], main_circle)
 print("new", main_circle)
 
 
+print(convolve_cutouts(old_cutout, new_cutout))
 
 
 
