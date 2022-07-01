@@ -61,11 +61,11 @@ def find_ball_location(image_path):
 
         main_circle = np.squeeze(main_circle)
 
-        cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
-        # draw the center of the circle
-        cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
-        cv2.imshow('Ball Detection',read_image)
-        cv2.waitKey(0)
+        # cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
+        # # draw the center of the circle
+        # cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
+        # cv2.imshow('Ball Detection',read_image)
+        # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         return main_circle
 
@@ -95,8 +95,8 @@ def create_circle_cutout(main_path_string, main_circle):
     mask = mask[y:y+h,x:x+w]
     result[mask==0] = (255,255,255)
 
-    cv2.imshow('Convolutional Filter', result)
-    cv2.waitKey()
+    # cv2.imshow('Convolutional Filter', result)
+    # cv2.waitKey()
 
     return result
 
@@ -164,6 +164,7 @@ def convolve_cutouts(old_cutout, new_cutout):
         convolution_returns.append(convolution_ret)
 
         if i > 8:
+
             potential_minima = convolution_returns[-4]
             behind = (convolution_returns[-7] + convolution_returns[-6] + convolution_returns[-5]) // 3
             ahead = (convolution_returns[-3] + convolution_returns[-2] + convolution_returns[-1]) // 3
@@ -212,8 +213,6 @@ def write_to_csv(filename, list):
 
 
 def main():
-
-    print("hi")
 
     folder_path = "PerfectNick_soft_rotation_1"
     all_images_paths = []
