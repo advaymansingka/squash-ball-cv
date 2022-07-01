@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from pip import main
 import os
 import imutils
+import csv
 
 
 # helper function to get the path string for the image based on image number
@@ -63,7 +64,7 @@ def find_ball_location(image_path):
         cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
         # draw the center of the circle
         cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
-        cv2.imshow('detected circles',read_image)
+        cv2.imshow('Ball Detection',read_image)
         cv2.waitKey(0)
         # cv2.destroyAllWindows()
         return main_circle
@@ -94,7 +95,7 @@ def create_circle_cutout(main_path_string, main_circle):
     mask = mask[y:y+h,x:x+w]
     result[mask==0] = (255,255,255)
 
-    cv2.imshow('result', result)
+    cv2.imshow('Convolutional Filter', result)
     cv2.waitKey()
 
     return result
@@ -184,6 +185,32 @@ def convolve_cutouts(old_cutout, new_cutout):
 
 
 
+def clean_noisy_list(input_list):
+
+    list_length = len(input_list)
+
+    out_list = [np.NaN] * list_length
+    out_list[0] = input_list[0]
+    out_list[-1] = input_list[-1]
+
+    for i in range(1, list_length-1):
+        if not np.isnan(input_list[i-1]) and not np.isnan(input_list[i]) and not np.isnan(input_list[i+1]):
+            out_list[i] = (input_list[i-1] + input_list[i] + input_list[i+1]) / 3
+        else:
+            out_list[i] = input_list[i]
+
+    return out_list
+
+
+
+def write_to_csv(filename, list):
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(list)
+
+
+
+
 def main():
 
     print("hi")
@@ -201,10 +228,10 @@ def main():
     all_images_paths.sort()
 
 
-    x_locations = [False]*num_images
-    y_locations = [False]*num_images
+    x_locations = [np.NaN]*num_images
+    y_locations = [np.NaN]*num_images
 
-    rotation_amounts = [False]*num_images
+    rotation_amounts = [np.NaN]*num_images
 
     all_circles = [False]*num_images
     all_cutouts = [False]*num_images
@@ -228,10 +255,14 @@ def main():
             print("ball at {}".format(i))
 
         else:
-
-            all_circles.append(False)
-
             print("ball not at {}".format(i))
+
+
+    rotation_amounts = clean_noisy_list(rotation_amounts)
+
+    # plt.plot(x_locations, y_locations, 'o-', label='x-y values')
+    plt.plot(rotation_amounts, label='rotation')
+    plt.show()
 
 
 
