@@ -12,7 +12,7 @@ import imutils
 def image_path_generator(main_path_string: str, image_number: int) -> str:
 
     image_number = str(image_number)
-    padding_size = 3 - len(image_number)
+    padding_size = 5 - len(image_number)
     padding = ""
 
     for _ in range(padding_size):
@@ -20,7 +20,7 @@ def image_path_generator(main_path_string: str, image_number: int) -> str:
 
     image_number = padding + image_number
 
-    return main_path_string + image_number + ".jpeg"
+    return main_path_string + image_number + ".bmp"
 
 
 
@@ -184,61 +184,58 @@ def convolve_cutouts(old_cutout, new_cutout):
 
 
 
+def main():
+
+    print("hi")
+
+    folder_path = "PerfectNick_soft_rotation_1"
+    all_images_paths = []
+
+    num_images = 0
+    for path in os.listdir(folder_path):
+        relative_path = os.path.join(folder_path, path)
+        if os.path.isfile(relative_path):
+            num_images += 1
+            all_images_paths.append(relative_path)
+
+    all_images_paths.sort()
+
+
+    x_locations = [False]*num_images
+    y_locations = [False]*num_images
+
+    rotation_amounts = [False]*num_images
+
+    all_circles = [False]*num_images
+    all_cutouts = [False]*num_images
+
+
+    for i in range(num_images):
+
+        main_circle = find_ball_location(all_images_paths[i])
+
+        if main_circle is not False:
+
+            all_circles[i] = (main_circle)
+            all_cutouts.append(create_circle_cutout(all_images_paths[i], main_circle))
+
+            x_locations[i] = (main_circle[0])
+            y_locations[i] = (main_circle[1])
+
+            if i > 3 and all_circles[i-1] is not False:
+                rotation_amounts[i] = convolve_cutouts(all_cutouts[-2], all_cutouts[-1])
+
+            print("ball at {}".format(i))
+
+        else:
+
+            all_circles.append(False)
+
+            print("ball not at {}".format(i))
 
 
 
 
+if __name__ == "__main__":
+    main()
 
-
-
-
-
-folder_path = "PerfectNick_soft_rotation_1"
-all_images_paths = []
-
-num_images = 0
-for path in os.listdir(folder_path):
-    relative_path = os.path.join(folder_path, path)
-    if os.path.isfile(relative_path):
-        num_images += 1
-        all_images_paths.append(relative_path)
-
-all_images_paths.sort()
-
-
-
-ball_presence = []
-x_locations = []
-y_locations = []
-rotation_amounts = []
-
-old_cutout = 0
-new_cutout = 0
-
-main_circle = find_ball_location(all_images_paths[17])
-old_cutout = create_circle_cutout(all_images_paths[17], main_circle)
-print("old", main_circle)
-
-
-main_circle = find_ball_location(all_images_paths[18])
-new_cutout = create_circle_cutout(all_images_paths[18], main_circle)
-print("new", main_circle)
-
-
-print(convolve_cutouts(old_cutout, new_cutout))
-
-
-
-# for i in range(num_images):
-
-#     main_circle = find_ball_location(all_images_paths[i])
-#     new_cutout = create_circle_cutout(all_images_paths[i], main_circle)
-
-#     if main_circle is not False:
-#         print("ball at {}".format(i))
-
-#     else:
-#         print("ball not at {}".format(i))
-
-#     if i != 0:
-#         compare_cutouts(old_cutout, new_cutout)
