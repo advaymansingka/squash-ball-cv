@@ -61,18 +61,18 @@ def find_ball_location(image_path):
 
         main_circle = np.squeeze(main_circle)
 
-        # cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
-        # # draw the center of the circle
-        # cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
-        # cv2.imshow('Ball Detection',read_image)
-        # cv2.waitKey(0)
+        cv2.circle(read_image,(main_circle[0],main_circle[1]),main_circle[2],(0,255,0),2)
+        # draw the center of the circle
+        cv2.circle(read_image,(main_circle[0],main_circle[1]),2,(0,0,255),3)
+        cv2.imshow('Ball Detection',read_image)
+        cv2.waitKey(0)
         # cv2.destroyAllWindows()
         return main_circle
 
     else:
 
-        # cv2.imshow('detected circles',read_image)
-        # cv2.waitKey(0)
+        cv2.imshow('Ball Detection',read_image)
+        cv2.waitKey(0)
         # cv2.destroyAllWindows()
         return False
 
@@ -95,8 +95,8 @@ def create_circle_cutout(main_path_string, main_circle):
     mask = mask[y:y+h,x:x+w]
     result[mask==0] = (255,255,255)
 
-    # cv2.imshow('Convolutional Filter', result)
-    # cv2.waitKey()
+    cv2.imshow('Convolutional Filter', result)
+    cv2.waitKey()
 
     return result
 
@@ -261,6 +261,8 @@ def main():
 
     # plt.plot(x_locations, y_locations, 'o-', label='x-y values')
     plt.plot(rotation_amounts, label='rotation')
+    plt.xlabel('Frame')
+    plt.ylabel('Rotation Rate')
     plt.show()
 
 
